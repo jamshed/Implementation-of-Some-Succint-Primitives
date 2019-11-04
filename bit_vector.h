@@ -6,6 +6,7 @@ class bit_vector
 {
 private:
     const static int UNIT_WIDTH = 8;
+    const static uint64_t ALL_ONES_UNIT = 0xFF;
 
     uint64_t len;
     unsigned char *B;
@@ -13,20 +14,9 @@ private:
 public:
     // bit_vector() { B = new unsigned char; }
 
-    bit_vector(uint64_t len)
-    {
-        this -> len = len;
-        B = new unsigned char[(len + UNIT_WIDTH - 1) / UNIT_WIDTH];
-    }
+    bit_vector(uint64_t len);
 
-    bit_vector(bool *bits, uint64_t len)
-    {
-        this -> len = len;
-        B = new unsigned char[(len + UNIT_WIDTH - 1) / UNIT_WIDTH];
-
-        for(uint64_t i = 0; i < len; ++i)
-            bits[i] ? set_bit(i) : reset_bit(i);
-    }
+    bit_vector(bool *bits, uint64_t len);
 
     ~bit_vector()
     {
@@ -42,6 +32,25 @@ public:
     uint64_t get_int(uint64_t idx, uint64_t len);
     void print();
 };
+
+
+
+bit_vector::bit_vector(bool *bits, uint64_t len)
+{
+    this -> len = len;
+    B = new unsigned char[(len + UNIT_WIDTH - 1) / UNIT_WIDTH];
+
+    for(uint64_t i = 0; i < len; ++i)
+        bits[i] ? set_bit(i) : reset_bit(i);
+}
+
+
+
+bit_vector::bit_vector(uint64_t len)
+{
+    this -> len = len;
+    B = new unsigned char[(len + UNIT_WIDTH - 1) / UNIT_WIDTH]();
+}
 
 
 
@@ -76,7 +85,7 @@ void bit_vector::set_int(uint64_t idx, uint64_t len, uint64_t val)
 
     while(len >= UNIT_WIDTH)
     {
-        B[idx / UNIT_WIDTH] = (val & 0xFF);
+        B[idx / UNIT_WIDTH] = (val & ALL_ONES_UNIT);
         idx += UNIT_WIDTH, len -= UNIT_WIDTH, val >>= UNIT_WIDTH;
     }
 
