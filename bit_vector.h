@@ -12,26 +12,30 @@ private:
     unsigned char *B;
 
 public:
-    // bit_vector() { B = new unsigned char; }
-
+    bit_vector() { len = 0; }
     bit_vector(uint64_t len);
-
     bit_vector(bool *bits, uint64_t len);
-
-    ~bit_vector()
-    {
-        delete B;
-    }
+    
+    ~bit_vector() { delete B; }
 
 
     inline uint64_t get_len() { return len; }
+    inline void set_len(uint64_t len);
     inline bool get_bit(uint64_t idx);
     inline void set_bit(uint64_t idx);
     inline void reset_bit(uint64_t idx);
-    void set_int(uint64_t idx, uint64_t len, uint64_t val);
     uint64_t get_int(uint64_t idx, uint64_t len);
+    void set_int(uint64_t idx, uint64_t len, uint64_t val);
     void print();
 };
+
+
+
+bit_vector::bit_vector(uint64_t len)
+{
+    this -> len = len;
+    B = new unsigned char[(len + UNIT_WIDTH - 1) / UNIT_WIDTH]();
+}
 
 
 
@@ -46,8 +50,11 @@ bit_vector::bit_vector(bool *bits, uint64_t len)
 
 
 
-bit_vector::bit_vector(uint64_t len)
+void bit_vector::set_len(uint64_t len)
 {
+    if(this -> len)
+        delete B;
+
     this -> len = len;
     B = new unsigned char[(len + UNIT_WIDTH - 1) / UNIT_WIDTH]();
 }
