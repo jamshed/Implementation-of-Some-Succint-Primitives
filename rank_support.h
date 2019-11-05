@@ -35,6 +35,7 @@ private:
 public:
     rank_support(bit_vector *b);
 
+    uint64_t bitvector_len()    { return B -> get_len(); }
     uint64_t rank1(uint64_t idx);
     uint64_t rank0(uint64_t idx);
     uint64_t overhead();
@@ -145,7 +146,7 @@ uint64_t rank_support::rank1(uint64_t idx)
 
 uint64_t rank_support::rank0(uint64_t idx)
 {
-    return idx - rank1(idx);
+    return idx - rank1(idx) + 1;
 }
 
 
