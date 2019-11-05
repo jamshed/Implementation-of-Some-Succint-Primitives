@@ -13,8 +13,8 @@ private:
 
     uint64_t bitCount;  // Number of bits in the bitvector B.
 
-    // All the following sizes are strongly based on the assumption that the maximum
-    // length of the input bitvector B is 2^64; on the grounds that it is not ossible
+    // All the following field-sizes are strongly based on the assumption that the maximum
+    // length of the input bitvector B is 2^64; on the grounds that it is not possible
     // to address addresses of length more than 64 bits at modern architectures.
 
     uint16_t supBlkLen;         // (log^2 n) / 2
@@ -47,8 +47,6 @@ rank_support::rank_support(bit_vector *b)
     B = b;
     bitCount = B -> get_len();
 
-    std::cout << "bitcount = " << bitCount << "\n";
-
     supBlkLen = ceil(pow(log2(bitCount), 2) / 2);
     supBlkWrdSz = ceil(log2(bitCount));
     supBlkCnt = ceil(double(bitCount) / supBlkLen);
@@ -63,21 +61,6 @@ rank_support::rank_support(bit_vector *b)
 
     build();
     dump_metadata();
-}
-
-
-
-void rank_support::dump_metadata()
-{
-    std::cout << "Superblock length = " << supBlkLen << "\n";
-    std::cout << "Superblock word size = " << (uint16_t)supBlkWrdSz << "\n";
-    std::cout << "Superblock count = " << supBlkCnt << "\n";
-    
-    std::cout << "===================================\n";
-
-    std::cout << "Block length = " << (uint16_t)blkLen << "\n";
-    std::cout << "Block word size = " << (uint16_t)blkWrdSz << "\n";
-    std::cout << "Block cout per superblock = " << (uint16_t)blkCntPerSupBlk << "\n";
 }
 
 
@@ -114,6 +97,23 @@ void rank_support::build()
 
 
 
+void rank_support::dump_metadata()
+{
+    std::cout << "Bitvector length = " << bitCount << "\n\n";
+
+    std::cout << "Superblock length = " << supBlkLen << "\n";
+    std::cout << "Superblock word size = " << (uint16_t)supBlkWrdSz << "\n";
+    std::cout << "Superblock count = " << supBlkCnt << "\n";
+    
+    std::cout << "===================================\n";
+
+    std::cout << "Block length = " << (uint16_t)blkLen << "\n";
+    std::cout << "Block word size = " << (uint16_t)blkWrdSz << "\n";
+    std::cout << "Block cout per superblock = " << (uint16_t)blkCntPerSupBlk << "\n";
+}
+
+
+
 void rank_support::set_superblock_value(uint64_t idx, uint64_t val)
 {
     R_s.set_int(idx * supBlkWrdSz, supBlkWrdSz, val);
@@ -136,24 +136,21 @@ uint64_t rank_support::rank1(uint64_t idx)
 
     uint64_t supBlkVal = R_s.get_int(supBlk * supBlkWrdSz, supBlkWrdSz);
     uint64_t blkVal = R_b.get_int((supBlk * blkCntPerSupBlk + blk) * blkWrdSz, blkWrdSz);
-
-    uint64_t inBlkVal = B -> get_int(supBlk * supBlkLen + (uint64_t)blk * blkLen, inBlkBit + 1);
-    inBlkVal = __builtin_popcount(inBlkVal);
-
-    // printf("R_b = ");
-    // R_b.print();
-
-
-    // printf("supBlk = %d\n", (int)supBlk);
-    // printf("supBlkVal = %d\n", (int)R_s.get_int(supBlk * supBlkWrdSz, supBlkWrdSz));
-
-    // printf("blk = %d\n", (int)blk);
-    // printf("Block starts at %d\n", int((supBlk * blkCntPerSupBlk + blk) * blkWrdSz));
-    // printf("blkVal = %d\n", (int)R_b.get_int((supBlk * blkCntPerSupBlk + blk) * blkWrdSz, blkWrdSz));
+    uint64_t inBlkVal = __builtin_popcount(B -> get_int(supBlk * supBlkLen + (uint64_t)blk * blkLen, inBlkBit + 1));
 
     return  supBlkVal + blkVal + inBlkVal;
+}
 
-    // uint64_t supBlkVal = R_s.get_int(idx / supBlkLen, supBlkWrdSz);
-    // uint64_t blkVal = R_b.get_int((idx % supBlkLen) / blkLen, blkWrdSz);
-    // uint64_t inBlkVal = B -> get_int()
+
+
+uint64_t rank_support::rank0(uint64_t idx)
+{
+    return idx - rank1(idx);
+}
+
+
+
+uint64_t rank_support::overhead()
+{
+    return R_b.get_len() + R_s.get_len();
 }
