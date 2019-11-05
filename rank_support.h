@@ -28,13 +28,14 @@ private:
 
     inline void set_superblock_value(uint64_t idx, uint64_t val);
     inline void set_block_value(uint64_t supBlkIdx, uint8_t blkIdx, uint64_t val);
-    void build();
     void dump_metadata();
 
 
 public:
+    rank_support() {}
     rank_support(bit_vector *b);
 
+    void build(bit_vector *b);
     uint64_t bitvector_len()    { return B -> get_len(); }
     uint64_t rank1(uint64_t idx);
     uint64_t rank0(uint64_t idx);
@@ -44,6 +45,13 @@ public:
 
 
 rank_support::rank_support(bit_vector *b)
+{
+    build(b);
+}
+
+
+
+void rank_support::build(bit_vector *b)
 {
     B = b;
     bitCount = B -> get_len();
@@ -60,14 +68,8 @@ rank_support::rank_support(bit_vector *b)
     R_s.set_len(supBlkCnt * supBlkWrdSz);
     R_b.set_len((supBlkCnt * blkCntPerSupBlk) * blkWrdSz);
 
-    build();
-    dump_metadata();
-}
+    // dump_metadata();
 
-
-
-void rank_support::build()
-{
     uint64_t supBlkVal = 0;
     for(uint64_t i = 0; i < supBlkCnt; ++i)
     {

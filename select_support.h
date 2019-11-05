@@ -9,8 +9,10 @@ class select_support
         uint64_t select(uint64_t rank, bool bit);
 
     public:
-        select_support(rank_support *R) { r = R; }
+        select_support() {}
+        select_support(rank_support *R) { build(R); }
 
+        void build(rank_support *R) { r = R; }
         uint64_t select1(uint64_t rank);
         uint64_t select0(uint64_t rank);
         uint64_t overhead();
