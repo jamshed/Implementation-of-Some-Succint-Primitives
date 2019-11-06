@@ -1,6 +1,8 @@
 #include<cstdint>
 #include<cstdio>
 #include<fstream>
+#include<random>
+#include<functional>
 
 
 class bit_vector
@@ -30,6 +32,7 @@ public:
     void print();
     void serialize(std::ofstream &output);
     void deserialize(std::ifstream &input);
+    void generate_random_bitvector(uint64_t length);
 };
 
 
@@ -179,4 +182,20 @@ void bit_vector::deserialize(std::ifstream &input)
     uint64_t slots = (len + UNIT_WIDTH - 1) / UNIT_WIDTH;
 
     input.read((char *)B, slots);
+}
+
+
+
+void bit_vector::generate_random_bitvector(uint64_t length)
+{
+    if(this -> len)
+        delete B;
+
+    this -> len = length;
+    B = new unsigned char[(len + UNIT_WIDTH - 1) / UNIT_WIDTH]();
+
+    
+    auto gen = std::bind(std::uniform_int_distribution<>(0,1), std::default_random_engine());
+    for(uint64_t idx = 0; idx < len; ++idx)
+        gen() ? set_bit(idx) : reset_bit(idx);
 }
