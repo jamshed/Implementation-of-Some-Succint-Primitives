@@ -69,5 +69,5 @@ uint64_t select_support::select0(uint64_t rank)
 
 uint64_t select_support::overhead()
 {
-    return r -> overhead();
+    return 0;
 }
