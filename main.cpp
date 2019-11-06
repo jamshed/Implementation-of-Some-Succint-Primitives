@@ -239,11 +239,11 @@ int main()
 
     // wavelet_tree_test0(std::string("input.txt"));
 
-    // wavelet_tree_rank_test(std::string("input1.txt"));
+    // wavelet_tree_rank_test(std::string("input.txt"));
 
     // wavelet_tree_select_test(std::string("input1.txt"), std::string("output.txt"));
 
-    wavelet_tree_serialize_deserialize_test(std::string("input.txt"), std::string("output.txt"));
+    // wavelet_tree_serialize_deserialize_test(std::string("input.txt"), std::string("output.wt"));
 
     return 0;
 }
