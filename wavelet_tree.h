@@ -1,5 +1,6 @@
 #include<iostream>
 #include<fstream>
+#include<cstdio>
 #include<string>
 #include<map>
 #include<unordered_map>
@@ -23,32 +24,38 @@ private:
     select_support s;   // Select support on rank support r.
 
 
+    wavelet_tree(uint8_t l, uint8_t r, uint64_t len, uint8_t wrdSz);
+
     void build(std::string &text, std::map<char, uint8_t> &charMap);
     void build(uint8_t l, uint8_t r);
+    void serialize(std::ofstream &output, std::string &text, std::map<char, uint8_t> &charMap);
+    void serialize_wavelet_tree(std::ofstream &output);
 
 
 public:
     wavelet_tree() {}
-    wavelet_tree(uint8_t l, uint8_t r, uint64_t len, uint8_t wrdSz);
     wavelet_tree(std::string &inputFile, std::string &outputFile);
 
     char access(std::string wtFileName, std::string acessIndices);
     uint64_t rank(uint64_t idx);
     uint64_t select(uint8_t ch, uint64_t rank);
+
+    void deserialize(std::string &waveletFile);
+    void deserialize_wavelet_tree(std::ifstream &input);
 };
 
 
 
 wavelet_tree::wavelet_tree(std::string &inputFile, std::string &outputFile)
 {
-    std::ifstream inpFile(inputFile);
+    std::ifstream input(inputFile);
     std::string text;
 
 
     // Read in the text.
 
-    std::getline(inpFile, text);
-    inpFile.close();
+    std::getline(input, text);
+    input.close();
 
 
     // Map the arbitrary alphabet to a [0, sigma) range.
@@ -64,15 +71,18 @@ wavelet_tree::wavelet_tree(std::string &inputFile, std::string &outputFile)
         p -> second = distinctChar++;
 
 
-    // Serialize the text as is, to disk;
-    // Serialize this hash map into the same file, with metadata.
-
-
     // Build the wavelet tree.
     build(text, charMap);
 
 
-    // Serialize the wavelet tree to the same file.
+    // Seralize text, character mapping, and the wavelet tree.
+
+    std::ofstream output;
+    output.open(outputFile.c_str(), std::ios::binary | std::ios::out);
+
+    serialize(output, text, charMap);
+
+    output.close();
 }
 
 
@@ -110,7 +120,7 @@ void wavelet_tree::build(uint8_t l, uint8_t r)
     // printf("build(%d, %d). text len = %d\n", (int)l, (int)r, (int)B.get_len());
 
     if(l == r)
-        return;
+        return; // No need to build the bitvector, and can be left as is (all zeroes based on the initialization)
 
     uint8_t mid = (l + r) / 2;
     uint64_t countL = 0, countR = 0, wordsVecSz = words.get_len();
@@ -196,4 +206,151 @@ uint64_t wavelet_tree::select(uint8_t ch, uint64_t rank)
     uint64_t currLvlIdx = s.select1(nxtLvlIdx + 1);
 
     return currLvlIdx;
+}
+
+
+
+void wavelet_tree::serialize(std::ofstream &output, std::string &text, std::map<char, uint8_t> &charMap)
+{
+    // Serialize the text length, followed by the text itself.
+    // (Required for future access(idx) operations).
+    uint64_t textLen = text.length();
+
+    output.write((const char *)&textLen, sizeof(textLen));
+    output.write(text.c_str(), text.length());
+
+
+    // Serialize the hash map size, followed by the hass map itself.
+    // (Required for future select(ch, rank) operations).
+    uint64_t mapSize = charMap.size();
+    
+    output.write((const char *)&mapSize, sizeof(mapSize));
+    for(auto p = charMap.begin(); p != charMap.end(); ++p)
+    {
+        output.write(&p -> first, sizeof(p -> first));
+        output.write((const char *)&p -> second, sizeof(p -> second));
+    }
+
+
+    // Serialize the wavelet tree.
+    serialize_wavelet_tree(output);
+}
+
+
+
+void wavelet_tree::serialize_wavelet_tree(std::ofstream &output)
+{
+    
+
+    // Serialize the character range.
+
+    output.write((const char *)&left, sizeof(left));
+    output.write((const char *)&right, sizeof(right));
+
+    // Serialize the bitvector.
+    B.serialize(output);
+
+    // Serialize the word size in words bitvector.
+    output.write((const char *)&wrdSz, sizeof(wrdSz));
+
+    // Serialize the words bitvector.
+    words.serialize(output);
+
+    
+    // Serialize the rank_support.
+    r.serialize(output);
+
+    // No serialization required for the select_support.
+
+    // Recursively serialize the left and right wavelet trees, if existent.
+    if(left < right)
+    {
+        wt_l -> serialize_wavelet_tree(output);
+        wt_r -> serialize_wavelet_tree(output);
+    }
+}
+
+
+
+void wavelet_tree::deserialize(std::string &waveletFile)
+{
+    std::ifstream input;
+    input.open(waveletFile.c_str(), std::ios::binary | std::ios::in);
+
+    std::cout << "Deserializing\n";
+
+    uint64_t textLen;
+    input.read((char *)&textLen, sizeof(textLen));
+    std::cout << "text len = " << textLen << "\n";
+
+    char *text = new char[textLen + 1]();
+    input.read(text, textLen);
+    std::cout << "text: " << text << "\n";
+
+
+    uint64_t mapSize;
+    input.read((char *)&mapSize, sizeof(mapSize));
+    std::cout << "Map size = " << mapSize << "\n";
+
+
+    for(uint64_t i = 0; i < mapSize; ++i)
+    {
+        char ch;
+        uint8_t val;
+
+        input.read(&ch, sizeof(ch));
+        input.read((char *)&val, sizeof(val));
+
+        std::cout << "Map " << ch << " " << (unsigned)val << "\n";
+    }
+
+
+    deserialize_wavelet_tree(input);
+
+    input.close();
+}
+
+
+
+void wavelet_tree::deserialize_wavelet_tree(std::ifstream &input)
+{
+    // Deserialize the character range.
+
+    input.read((char *)&left, sizeof(left));
+    input.read((char *)&right, sizeof(right));
+
+    std::cout << "Left = " << (unsigned)left << ", Right = " << (unsigned)right << "\n";
+
+    // Deserialize the bitvector.
+
+    B.deserialize(input);
+
+    std::cout << "Bitvector length = " << B.get_len() << "\n";
+    B.print();
+
+    // Deserialize the word size.
+
+    input.read((char *)&wrdSz, sizeof(wrdSz));
+
+    std::cout << "Word size = " << (unsigned)wrdSz << "\n";
+
+    // Deserialize the words bitvector.
+    
+    words.deserialize(input);
+
+    std::cout << "Words bitvector length = " << words.get_len() << "\n";
+    words.print();
+
+    // Deserialize the rank support, and pass the underlying bitvector B to it.
+
+    r.deserialize(&B, input);
+
+    wt_l = new wavelet_tree();
+    wt_r = new wavelet_tree();
+
+    if(left < right)
+    {
+        wt_l -> deserialize_wavelet_tree(input);
+        wt_r -> deserialize_wavelet_tree(input);
+    }
 }

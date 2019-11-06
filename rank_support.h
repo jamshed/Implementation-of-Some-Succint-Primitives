@@ -40,6 +40,9 @@ public:
     uint64_t rank1(uint64_t idx);
     uint64_t rank0(uint64_t idx);
     uint64_t overhead();
+
+    void serialize(std::ofstream &output);
+    void deserialize(bit_vector *b, std::ifstream &input);
 };
 
 
@@ -156,4 +159,48 @@ uint64_t rank_support::rank0(uint64_t idx)
 uint64_t rank_support::overhead()
 {
     return R_b.get_len() + R_s.get_len();
+}
+
+
+
+void rank_support::serialize(std::ofstream &output)
+{
+    // Serialize the metadata.
+
+    output.write((const char *)&bitCount, sizeof(bitCount));
+
+    output.write((const char *)&supBlkLen, sizeof(supBlkLen));
+    output.write((const char *)&supBlkWrdSz, sizeof(supBlkWrdSz));
+    output.write((const char *)&supBlkCnt, sizeof(supBlkCnt));
+
+    output.write((const char *)&blkLen, sizeof(blkLen));
+    output.write((const char *)&blkWrdSz, sizeof(blkWrdSz));
+    output.write((const char *)&blkCntPerSupBlk, sizeof(blkCntPerSupBlk));
+
+
+    // Serialize the R_s and R_b bitvectors.
+    // Note that, bitvector *b is not being serialized; handle this issue while
+    // deserializing carefully.
+    R_s.serialize(output);
+    R_b.serialize(output);
+}
+
+
+
+void rank_support::deserialize(bit_vector *b, std::ifstream &input)
+{
+    B = b;
+
+    input.read((char *)&bitCount, sizeof(bitCount));
+
+    input.read((char *)&supBlkLen, sizeof(supBlkLen));
+    input.read((char *)&supBlkWrdSz, sizeof(supBlkWrdSz));
+    input.read((char *)&supBlkCnt, sizeof(supBlkCnt));
+
+    input.read((char *)&blkLen, sizeof(blkLen));
+    input.read((char *)&blkWrdSz, sizeof(blkWrdSz));
+    input.read((char *)&blkCntPerSupBlk, sizeof(blkCntPerSupBlk));
+
+    R_s.deserialize(input);
+    R_b.deserialize(input);
 }

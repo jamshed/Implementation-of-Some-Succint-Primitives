@@ -1,5 +1,6 @@
 #include<cstdint>
 #include<cstdio>
+#include<fstream>
 
 
 class bit_vector
@@ -27,6 +28,8 @@ public:
     uint64_t get_int(uint64_t idx, uint64_t len);
     void set_int(uint64_t idx, uint64_t len, uint64_t val);
     void print();
+    void serialize(std::ofstream &output);
+    void deserialize(std::ifstream &input);
 };
 
 
@@ -138,13 +141,42 @@ uint64_t bit_vector::get_int(uint64_t idx, uint64_t len)
 
 void bit_vector::print()
 {
-    uint64_t i = len;
-    do
-    {
-        i--;
+    for(uint16_t i = 0; i < len; ++i)
         putchar(get_bit(i) ? '1' : '0');
-    }
-    while(i > 0);
-
     putchar('\n');
+
+    // uint64_t i = len;
+    // do
+    // {
+    //     i--;
+    //     putchar(get_bit(i) ? '1' : '0');
+    // }
+    // while(i > 0);
+
+    // putchar('\n');
+}
+
+
+
+void bit_vector::serialize(std::ofstream &output)
+{
+    output.write((const char *)&len, sizeof(len));
+    
+    uint64_t slots = (len + UNIT_WIDTH - 1) / UNIT_WIDTH;
+
+    output.write((const char *)B, slots);
+}
+
+
+
+void bit_vector::deserialize(std::ifstream &input)
+{
+    uint64_t l;
+    input.read((char *)&l, sizeof(l));
+    
+    set_len(l);
+    
+    uint64_t slots = (len + UNIT_WIDTH - 1) / UNIT_WIDTH;
+
+    input.read((char *)B, slots);
 }
