@@ -179,8 +179,8 @@ void rank_support::serialize(std::ofstream &output)
 
 
     // Serialize the R_s and R_b bitvectors.
-    // Note that, bitvector *b is not being serialized; handle this issue while
-    // deserializing carefully.
+    // Note that, bitvector *b is not being serialized; handle this issue carefully
+    // while deserializing.
     R_s.serialize(output);
     R_b.serialize(output);
 }
