@@ -35,6 +35,7 @@ private:
 public:
     wavelet_tree() {}
     wavelet_tree(std::string &inputFile, std::string &outputFile);
+    wavelet_tree(std::string &text);
 
     uint64_t rank(uint64_t idx);
     uint64_t select(uint8_t ch, uint64_t rank);
@@ -92,6 +93,29 @@ wavelet_tree::wavelet_tree(std::string &inputFile, std::string &outputFile)
 
     std::cout << "Size of the alphabet the tree is constructed over: " << (unsigned)distinctChar << "\n";
     std::cout << "Number of characters in the input string: " << text.length() << "\n";
+}
+
+
+
+wavelet_tree::wavelet_tree(std::string &text)
+{
+    // Map the arbitrary alphabet to a [0, sigma) range.
+    // Maintaining the lexicographical order (ASCII) here for ease of analysis and debug.
+    // Any arbitrary ordering should suffice in practice.
+
+    uint8_t distinctChar = 0;
+    std::map<char, uint8_t> charMap;
+
+    for(auto p = text.begin(); p != text.end(); ++p)
+        if(charMap.find(*p) == charMap.end())
+            charMap[*p] = 0;
+
+    for(auto p = charMap.begin(); p != charMap.end(); ++p)
+        p -> second = distinctChar++;
+
+
+    // Build the wavelet tree.
+    build(text, charMap);
 }
 
 
