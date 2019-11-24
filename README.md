@@ -13,7 +13,7 @@ query support.
 Compile
 --------
 ```
-g++ wt.cpp -o wt
+g++ -std=c++11 wt.cpp -o wt
 ```
 
 API
